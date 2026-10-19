@@ -7,26 +7,11 @@ on:
       - main
 
 jobs:
-  build:
+  inspect:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     steps:
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull Image
+      - name: Inspect image entrypoint and cmd
         run: |
-          docker pull atendai/evolution-api:latest || docker pull atendai/evolution-api:v2.2.2 || true
-
-      - name: Tag and Push
-        run: |
-          IMAGE_NAME=$(docker images --format '{{.Repository}}:{{.Tag}}' | head -n 1)
-          echo 'Found image:' $IMAGE_NAME
-          docker tag $IMAGE_NAME ghcr.io/${{ github.repository_owner }}/evolution-api:latest
-          docker push ghcr.io/${{ github.repository_owner }}/evolution-api:latest
+          docker pull atendai/evolution-api:v2.2.2
+          echo '=== ENTRYPOINT & CMD ==='
+          docker inspect atendai/evolution-api:v2.2.2 --format 'Entrypoint: {{json .Config.Entrypoint}} | Cmd: {{json .Config.Cmd}} | WorkDir: {{json .Config.WorkingDir}}'
