@@ -3,7 +3,6 @@
 USER root
 USER node
 
-# n8n default port
 EXPOSE 5678
 
 CMD [n8n, start]
