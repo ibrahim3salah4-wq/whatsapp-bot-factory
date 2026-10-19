@@ -1,0 +1,32 @@
+﻿services:
+  - type: web
+    name: n8n-automation-engine
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: frankfurt # أو oregon / ohio حسب اختيارك
+    envVars:
+      - key: N8N_PORT
+        value: 5678
+      - key: PORT
+        value: 5678
+      - key: GENERIC_TIMEZONE
+        value: Africa/Cairo
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_HOST
+        sync: false
+      - key: DB_POSTGRESDB_PORT
+        value: 5432
+      - key: DB_POSTGRESDB_DATABASE
+        value: postgres
+      - key: DB_POSTGRESDB_USER
+        value: postgres
+      - key: DB_POSTGRESDB_PASSWORD
+        sync: false
+      - key: DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED
+        value: false
+      - key: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+        value: true
+      - key: WEBHOOK_URL
+        sync: false

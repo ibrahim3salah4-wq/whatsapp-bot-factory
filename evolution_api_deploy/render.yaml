@@ -1,0 +1,53 @@
+﻿services:
+  - type: web
+    name: evolution-whatsapp-bridge
+    env: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SERVER_TYPE
+        value: http
+      - key: SERVER_PORT
+        value: 8080
+      - key: SERVER_URL
+        sync: false
+      - key: AUTHENTICATION_TYPE
+        value: apikey
+      - key: AUTHENTICATION_API_KEY
+        value: MySuperSecretEvolutionKey2026
+      - key: AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES
+        value: true
+      # إعدادات قاعدة البيانات (PostgreSQL / Supabase)
+      - key: DATABASE_ENABLED
+        value: true
+      - key: DATABASE_PROVIDER
+        value: postgresql
+      - key: DATABASE_CONNECTION_URI
+        sync: false
+      - key: DATABASE_CONNECTION_CLIENT_NAME
+        value: evolution_whatsapp_factory
+      - key: DATABASE_SAVE_DATA_INSTANCE
+        value: true
+      - key: DATABASE_SAVE_DATA_NEW_MESSAGE
+        value: true
+      - key: DATABASE_SAVE_MESSAGE_UPDATE
+        value: true
+      - key: DATABASE_SAVE_DATA_CONTACTS
+        value: true
+      - key: DATABASE_SAVE_DATA_CHATS
+        value: true
+      # تفعيل Evolution Manager للتحكم بواجهة الويب ومسح الـ QR Code
+      - key: MANAGER_ENABLED
+        value: true
+      - key: MANAGER_PORT
+        value: 8080
+      # إعدادات الـ QR Code
+      - key: QRCODE_LIMIT
+        value: 30
+      - key: QRCODE_COLOR
+        value: #198754
+      - key: DEL_INSTANCE
+        value: false

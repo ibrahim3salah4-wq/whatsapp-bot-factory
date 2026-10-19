@@ -1,0 +1,407 @@
+﻿{
+  name: Evolution_WhatsApp_Elshenawy_Bot,
+  nodes: [
+    {
+      parameters: {
+        httpMethod: POST,
+        path: evolution-whatsapp,
+        responseMode: onReceived,
+        options: {}
+      },
+      id: webhook-evolution,
+      name: Evolution Webhook,
+      type: n8n-nodes-base.webhook,
+      typeVersion: 2,
+      position: [
+        200,
+        300
+      ],
+      webhookId: evolution-whatsapp
+    },
+    {
+      parameters: {
+        conditions: {
+          options: {
+            caseSensitive: true,
+            leftValue: ",
+ typeValidation: strict
+ },
+ conditions: [
+ {
+ id: c1,
+ leftValue: ={{ .body.data.key.fromMe }},
+ rightValue: false,
+ operator: {
+ type: boolean,
+ operation: equals
+ }
+ }
+ ],
+ combinator: and
+ },
+ options: {}
+ },
+ id: filter-fromme,
+ name: Is Incoming Message?,
+ type: n8n-nodes-base.if,
+ typeVersion: 2,
+ position: [
+ 420,
+ 300
+ ]
+ },
+ {
+ parameters: {
+ method: POST,
+ url: https://aws-0-eu-west-2.pooler.supabase.com/rest/v1/bot_records,
+ sendHeaders: true,
+ headerParameters: {
+ parameters: [
+ {
+ name: apikey,
+ value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ },
+ {
+ name: Authorization,
+ value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ },
+ {
+ name: Content-Type,
+ value: application/json
+ },
+ {
+ name: Prefer,
+ value: resolution=merge-duplicates
+ }
+ ]
+ },
+ sendBody: true,
+ specifyBody: json,
+ jsonBody: ={\n  "business_name": "عيادات الشناوي لطب الأسنان - فرع مدينة نصر",\n  "customer_phone": "{{ .body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}",\n  "customer_name": "Customer",\n  "requested_service": "Human Support",\n  "status": "human_takeover",\n  "notes": "تم الرد يدوياً من هاتف العيادة - إيقاف البوت مؤقتاً"\n},
+ options: {}
+ },
+ id: human-takeover-db,
+ name: Mark Human Takeover,
+ type: n8n-nodes-base.httpRequest,
+ typeVersion: 4.2,
+ position: [
+ 660,
+ 480
+ ]
+ },
+ {
+ parameters: {
+ url: =https://aws-0-eu-west-2.pooler.supabase.com/rest/v1/bot_records?customer_phone=eq.{{ .body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}&status=eq.human_takeover&select=id,
+ sendHeaders: true,
+ headerParameters: {
+ parameters: [
+ {
+ name: apikey,
+ value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ },
+ {
+ name: Authorization,
+ value: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ }
+ ]
+ },
+ options: {}
+ },
+ id: check-takeover-status,
+ name: Check Takeover Status,
+ type: n8n-nodes-base.httpRequest,
+ typeVersion: 4.2,
+ position: [
+ 660,
+ 220
+ ]
+ },
+ {
+ parameters: {
+ conditions: {
+ options: {
+ caseSensitive: true,
+ leftValue: ,
+ typeValidation: strict
+ },
+ conditions: [
+ {
+ id: takeover_check,
+ leftValue: ={{ .length || 0 }},
+ rightValue: 0,
+ operator: {
+ type: number,
+ operation: equals
+ }
+ }
+ ],
+ combinator: and
+ },
+ options: {}
+ },
+ id: is-bot-allowed,
+ name: Is Bot Allowed?,
+ type: n8n-nodes-base.if,
+ typeVersion: 2,
+ position: [
+ 880,
+ 220
+ ]
+ },
+ {
+ parameters: {
+ promptType: define,
+ text: ={{ Evolution Webhook.item.json.body.data.message.conversation || Evolution Webhook.item.json.body.data.message.extendedTextMessage.text }},
+ options: {
+ systemMessage: =أنت المساعد الذكي وموظف الاستقبال لـ "عيادات الشناوي لطب الأسنان - فرع مدينة نصر".\nالفرع: مدينة نصر، القاهرة. الهاتف: 01030366311.\nالمواعيد: يومياً من 10 صباحاً حتى 10 مساءً ما عدا الجمعة إجازة.\nالأسعار: كشف 300 ج، تنظيف جير 600 ج، حشو عادي يبدأ من 700 ج، حشو عصب يبدأ من 1500 ج، تبييض ليزر 2500 ج، زراعة وتقويم يحددان بعد الكشف.\n\nتحدث باللهجة المصرية المهذبة والمطمئنة.\nلا تخترع أي معلومات من خارج هذه البيانات.\nساعد المريض برقة واجمع منه: (الاسم الثلاثي، رقم الهاتف، الخدمة المطلوبة، الموعد المناسب).\nاستخدم الأدوات المتاحة (Check_Appointments_Tool و Book_Appointment_Tool) لفحص المواعيد وتسجيل الحجز في جدول bot_records.
+ }
+ },
+ id: ai-agent-elshenawy,
+ name: Elshenawy AI Agent,
+ type: @n8n/n8n-nodes-langchain.agent,
+ typeVersion: 1.7,
+ position: [
+ 1120,
+ 200
+ ]
+ },
+ {
+ parameters: {
+ modelName: models/gemini-2.5-flash,
+ options: {
+ temperature: 0.3
+ }
+ },
+ id: gemini-chat-model,
+ name: Google Gemini Chat Model,
+ type: @n8n/n8n-nodes-langchain.lmChatGoogleGemini,
+ typeVersion: 1,
+ position: [
+ 1060,
+ 420
+ ],
+ credentials: {
+ googlePalmApi: {
+ id: gemini-api-cred,
+ name: Google Gemini API Key
+ }
+ }
+ },
+ {
+ parameters: {
+ sessionIdKey: ={{ Evolution Webhook.item.json.body.data.key.remoteJid }},
+ contextWindowLength: 10
+ },
+ id: window-memory,
+ name: Window Buffer Memory,
+ type: @n8n/n8n-nodes-langchain.memoryBufferWindow,
+ typeVersion: 1.3,
+ position: [
+ 1200,
+ 420
+ ]
+ },
+ {
+ parameters: {
+ name: Check_Appointments_Tool,
+ description: فحص المواعيد المحجوزة أو المتاحة في عيادات الشناوي للتأكد من عدم وجود تعارض قبل الحجز,
+ workflowId: ,
+ specifyInputSchema: true,
+ jsonSchema: {\n  "type": "object",\n  "properties": {\n    "scheduled_date": {\n      "type": "string",\n      "description": "تاريخ أو يوم الموعد المراد فحصه YYYY-MM-DD"\n    }\n  },\n  "required": ["scheduled_date"]\n}
+ },
+ id: check-app-tool,
+ name: Check_Appointments_Tool,
+ type: @n8n/n8n-nodes-langchain.toolWorkflow,
+ typeVersion: 1.2,
+ position: [
+ 1340,
+ 420
+ ]
+ },
+ {
+ parameters: {
+ name: Book_Appointment_Tool,
+ description: حجز موعد مريض جديد في جدول bot_records في عيادات الشناوي عند اكتمال بيانات الحجز,
+ workflowId: ,
+ specifyInputSchema: true,
+ jsonSchema: {\n  "type": "object",\n  "properties": {\n    "customer_name": { "type": "string", "description": "اسم المريض الثلاثي" },\n    "customer_phone": { "type": "string", "description": "رقم هاتف المريض" },\n    "requested_service": { "type": "string", "description": "الخدمة أو الشكوى المطلوبة" },\n    "scheduled_date": { "type": "string", "description": "تاريخ ووقت الحجز المتفق عليه YYYY-MM-DD HH:mm:ss" },\n    "notes": { "type": "string", "description": "ملاحظات إضافية" }\n  },\n  "required": ["customer_name", "customer_phone", "requested_service", "scheduled_date"]\n}
+ },
+ id: book-app-tool,
+ name: Book_Appointment_Tool,
+ type: @n8n/n8n-nodes-langchain.toolWorkflow,
+ typeVersion: 1.2,
+ position: [
+ 1480,
+ 420
+ ]
+ },
+ {
+ parameters: {
+ amount: 2.5,
+ unit: seconds
+ },
+ id: wait-node,
+ name: Human Typing Delay,
+ type: n8n-nodes-base.wait,
+ typeVersion: 1.1,
+ position: [
+ 1460,
+ 200
+ ],
+ webhookId: typing-delay
+ },
+ {
+ parameters: {
+ method: POST,
+ url: https://evolution-whatsapp-bridge.onrender.com/message/sendText/elshenawy_clinic,
+ sendHeaders: true,
+ headerParameters: {
+ parameters: [
+ {
+ name: apikey,
+ value: MySuperSecretEvolutionKey2026
+ },
+ {
+ name: Content-Type,
+ value: application/json
+ }
+ ]
+ },
+ sendBody: true,
+ specifyBody: json,
+ jsonBody: ={\n  "number": "{{ Evolution Webhook.item.json.body.data.key.remoteJid.replace('@s.whatsapp.net', '') }}",\n  "text": "{{ .output }}"\n},
+ options: {}
+ },
+ id: send-evolution-reply,
+ name: Send Evolution Reply,
+ type: n8n-nodes-base.httpRequest,
+ typeVersion: 4.2,
+ position: [
+ 1680,
+ 200
+ ]
+ }
+ ],
+ connections: {
+ Evolution Webhook: {
+ main: [
+ [
+ {
+ node: Is Incoming Message?,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Is Incoming Message?: {
+ main: [
+ [
+ {
+ node: Check Takeover Status,
+ type: main,
+ index: 0
+ }
+ ],
+ [
+ {
+ node: Mark Human Takeover,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Check Takeover Status: {
+ main: [
+ [
+ {
+ node: Is Bot Allowed?,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Is Bot Allowed?: {
+ main: [
+ [
+ {
+ node: Elshenawy AI Agent,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Google Gemini Chat Model: {
+ ai_languageModel: [
+ [
+ {
+ node: Elshenawy AI Agent,
+ type: ai_languageModel,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Window Buffer Memory: {
+ ai_memory: [
+ [
+ {
+ node: Elshenawy AI Agent,
+ type: ai_memory,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Check_Appointments_Tool: {
+ ai_tool: [
+ [
+ {
+ node: Elshenawy AI Agent,
+ type: ai_tool,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Book_Appointment_Tool: {
+ ai_tool: [
+ [
+ {
+ node: Elshenawy AI Agent,
+ type: ai_tool,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Elshenawy AI Agent: {
+ main: [
+ [
+ {
+ node: Human Typing Delay,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ },
+ Human Typing Delay: {
+ main: [
+ [
+ {
+ node: Send Evolution Reply,
+ type: main,
+ index: 0
+ }
+ ]
+ ]
+ }
+ },
+ settings: {
+ executionOrder: v1
+ }
+}
