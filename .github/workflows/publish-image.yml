@@ -1,4 +1,4 @@
-﻿name: Mirror Evolution API Image to GHCR
+﻿name: Publish Evolution Image
 
 on:
   workflow_dispatch:
@@ -7,21 +7,21 @@ on:
       - main
 
 jobs:
-  mirror:
+  build:
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
     steps:
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and Retag Evolution API Image
+      - name: Pull and Push to GHCR
         run: |
-          docker pull evoapicloud/evolution-api:latest || docker pull evolutionapi/evolution-api:latest
-          docker tag evolutionapi/evolution-api:latest ghcr.io/${{ github.repository_owner }}/evolution-api:latest || true
-          docker push ghcr.io/${{ github.repository_owner }}/evolution-api:latest || true
+          docker pull evolutionapi/evolution-api:latest
+          docker tag evolutionapi/evolution-api:latest ghcr.io/ibrahim3salah4-wq/evolution-api:latest
+          docker push ghcr.io/ibrahim3salah4-wq/evolution-api:latest
