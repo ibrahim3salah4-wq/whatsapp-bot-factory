@@ -20,8 +20,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and Push to GHCR
+      - name: Pull Image
         run: |
-          docker pull evolutionapi/evolution-api:latest
-          docker tag evolutionapi/evolution-api:latest ghcr.io/ibrahim3salah4-wq/evolution-api:latest
-          docker push ghcr.io/ibrahim3salah4-wq/evolution-api:latest
+          docker pull atendai/evolution-api:latest || docker pull atendai/evolution-api:v2.2.2 || true
+
+      - name: Tag and Push
+        run: |
+          IMAGE_NAME=$(docker images --format '{{.Repository}}:{{.Tag}}' | head -n 1)
+          echo 'Found image:' $IMAGE_NAME
+          docker tag $IMAGE_NAME ghcr.io/${{ github.repository_owner }}/evolution-api:latest
+          docker push ghcr.io/${{ github.repository_owner }}/evolution-api:latest
